@@ -33,7 +33,7 @@ function handlesymbol(symbol) {
             }
             // either a symbol (1) entered, or full binary operation (2)
             else if (last_thing === 1 || last_thing === 2) {
-                if (last_thing === 2) last_num = parseInt(buffer);
+                if (last_thing === 2) last_num = parseFloat(buffer);
                 miniscreen.innerText += " " + last_num + " ="
                 flushOperation(last_num);
                 // previousOperator = null;
@@ -44,7 +44,7 @@ function handlesymbol(symbol) {
             else {
                 if (previousOperator != null) {
                     miniscreen.innerText = buffer + " " + previousOperator + " " + last_num.toString() + " =";
-                    runningTotal = parseInt(buffer);
+                    runningTotal = parseFloat(buffer);
                     flushOperation(last_num);
                     buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
                     runningTotal = 0;
@@ -88,7 +88,7 @@ function handleMath(symbol) {
     //     return;
     // }
 
-    const intBuffer = parseInt(buffer);
+    const intBuffer = parseFloat(buffer);
     last_thing = 1;
     last_num = intBuffer;
     miniscreen.innerText = buffer + " " + symbol;
