@@ -1,38 +1,77 @@
 let runningTotal = 0;
 let buffer = "0";
-let previousOperator;
-
+let previousOperator = null;
+let last_num = 0; // last number entered
+let last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
 const screen = document.querySelector('.screen');
+const miniscreen = document.querySelector('.miniscreen');
 
 function buttonClick(value) {
     if (isNaN(value)) {
         handlesymbol(value);
     } else {
         handleNumber(value);
+        screen.innerText = buffer;
     }
-    screen.innerText = buffer;
 }
 
 function handlesymbol(symbol) {
     switch (symbol) {
         case 'C':
+            last_num = 0;
+            last_thing = 0;
+            previousOperator = null;
             buffer = '0';
             runningTotal = 0;
+            screen.innerText = buffer;
+            miniscreen.innerText = "";
             break;
         case '=':
-            if (previousOperator === null) {
-                return;
+            // only one number entered, no operation found
+            if (last_thing === 0) {
+                miniscreen.innerText = buffer + " =";
             }
-            flushOperation(parseInt(buffer));
-            previousOperator = null;
-            buffer = runningTotal;
-            runningTotal = 0;
+            // either a symbol (1) entered, or full binary operation (2)
+            else if (last_thing === 1 || last_thing === 2) {
+                if (last_thing === 2) last_num = parseInt(buffer);
+                miniscreen.innerText += " " + last_num + " ="
+                flushOperation(last_num);
+                // previousOperator = null;
+                buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
+                runningTotal = 0;
+            }
+            // last thing entered was =
+            else {
+                if (previousOperator != null) {
+                    miniscreen.innerText = buffer + " " + previousOperator + " " + last_num.toString() + " =";
+                    runningTotal = parseInt(buffer);
+                    flushOperation(last_num);
+                    buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
+                    runningTotal = 0;
+                }
+                else {
+                    miniscreen.innerText = buffer + " =";
+                }
+            }
+            screen.innerText = buffer;
+            last_thing = 3;
             break;
         case '←':
-            if (buffer.length === 1) {
-                buffer = '0';
-            } else {
-                buffer = buffer.toString(0, buffer.length - 1);
+            // last thing entered not a symbol
+            if (last_thing != 1) {
+                // last thing entered is a equal sign
+                if (last_thing === 3) {
+                    if (miniscreen.innerText === "") {
+                        buffer = removelastdigit(buffer);
+                    }
+                    else {
+                        miniscreen.innerText = "";
+                    }
+                }
+                else {
+                    buffer = removelastdigit(buffer);
+                }
+                screen.innerText = buffer;
             }
             break;
         case '+':
@@ -45,19 +84,21 @@ function handlesymbol(symbol) {
 }
 
 function handleMath(symbol) {
-    if (buffer === '0') {
-        return;
-    }
+    // if (buffer === '0') {
+    //     return;
+    // }
 
     const intBuffer = parseInt(buffer);
-
+    last_thing = 1;
+    last_num = intBuffer;
+    miniscreen.innerText = buffer + " " + symbol;
     if (runningTotal === 0) {
         runningTotal = intBuffer;
     } else {
         flushOperation(intBuffer);
     }
     previousOperator = symbol;
-    buffer = '0';
+    buffer = "0";
 }
 
 function flushOperation(intBuffer) {
@@ -73,6 +114,12 @@ function flushOperation(intBuffer) {
 }
 
 function handleNumber(numberString) {
+    if (last_thing === 1) {
+        last_thing = 2;
+    }
+    if (last_thing === 3) {
+        miniscreen.innerText = "";
+    }
     if (buffer === "0") {
         buffer = numberString;
     } else {
@@ -80,6 +127,14 @@ function handleNumber(numberString) {
     }
 }
 
+function removelastdigit(buffer) {
+    if (buffer.length === 1) {
+        buffer = "0";
+    } else {
+        buffer = buffer.slice(0, -1);
+    }
+    return buffer;
+}
 function init() {
     document.querySelector('.calc-buttons').addEventListener('click', function (event) {
         buttonClick(event.target.innerText);

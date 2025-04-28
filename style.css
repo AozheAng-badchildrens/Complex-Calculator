@@ -37,7 +37,7 @@ body {
     background: rgba(255, 255, 255, 0.30);
     border: 1px solid rgba(255, 255, 255, 0.34);
     flex-basis: 400px;
-    height: 540px;
+    height: 560px;
     padding: 20px 35px;
 }
 
@@ -54,6 +54,16 @@ body {
     padding: 20px;
     text-align: right;
     width: 326px;
+}
+
+.miniscreen {
+    border-radius: 0px;
+    font-size: 15px;
+    color: gray;
+    font-family: sans-serif;
+    text-align: right;
+    padding-right: 20px;
+    padding-bottom: 5px;
 }
 
 .calc-button-row {
