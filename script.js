@@ -38,8 +38,8 @@ function handlesymbol(symbol) {
             // either a symbol (1) entered, or full binary operation (2)
             else if (last_thing === 1 || last_thing === 2) {
                 if (last_thing === 2) last_num = parseFloat(buffer);
-                miniscreen.innerText += " " + roundLastNum() + " ="
-                flushOperation(last_num);
+                miniscreen.innerText += " " + roundLastNum() + " =";
+                flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
                 // previousOperator = null;
                 buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
                 runningTotal = 0;
@@ -49,7 +49,7 @@ function handlesymbol(symbol) {
                 if (previousOperator != null) {
                     miniscreen.innerText = roundBuffer() + " " + previousOperator + " " + roundLastNum() + " =";
                     runningTotal = parseFloat(buffer);
-                    flushOperation(last_num);
+                    flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
                     buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
                     runningTotal = 0;
                 }
@@ -105,23 +105,24 @@ function handleMath(symbol) {
     const intBuffer = parseFloat(roundBuffer());
     last_thing = 1;
     last_num = intBuffer;
-    miniscreen.innerText = buffer + " " + symbol;
+    miniscreen.innerText = roundBuffer() + " " + symbol;
     if (runningTotal === 0) {
         runningTotal = intBuffer;
     } else {
-        flushOperation(intBuffer);
+        flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
     }
     previousOperator = symbol;
     buffer = "0";
 }
 
-function flushOperation(intBuffer) {
+function flushOperation(intBuffer, lenD) {
     if (previousOperator === '+') {
         runningTotal += intBuffer;
     } else if (previousOperator === '−') {
         runningTotal -= intBuffer;
     } else if (previousOperator === '×') {
         runningTotal *= intBuffer;
+        runningTotal = parseFloat(runningTotal.toFixed(lenD));
     } else if (previousOperator === '÷') {
         runningTotal /= intBuffer;
     }
@@ -138,7 +139,7 @@ function handleNumber(numberString) {
     if (buffer === "0") {
         buffer = numberString;
     } else if (buffer.length < 27) {
-        buffer += numberString
+        buffer += numberString;
     }
 }
 
@@ -167,7 +168,7 @@ function displayScreen() {
     if (buffer === "Infinity" || buffer === "-Infinity") {
         screen.innerText = "Overflow";
     }
-    else if (buffer.charAt(buffer.length - 1) === ".") {
+    else if (buffer.charAt(buffer.length - 1) === "." || buffer.charAt(buffer.length - 1) === "0") {
         screen.innerText = buffer;
     }
     else {
@@ -181,6 +182,14 @@ function roundBuffer() {
 
 function roundLastNum() {
     return parseFloat(parseFloat(last_num).toFixed(roundPlaces)).toString();
+}
+
+function lenDecimal(numStr) {
+    numStr = numStr.toString();
+    if (numStr.indexOf(".") === -1) {
+        return 0;
+    }
+    return numStr.length - numStr.indexOf(".") - 1;
 }
 
 function init() {
