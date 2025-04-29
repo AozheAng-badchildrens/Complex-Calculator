@@ -7,11 +7,14 @@ const screen = document.querySelector('.screen');
 const miniscreen = document.querySelector('.miniscreen');
 
 function buttonClick(value) {
+    if (screen.innerText === "Overflow") {
+        handlesymbol('C');
+    }
     if (isNaN(value)) {
         handlesymbol(value);
     } else {
         handleNumber(value);
-        screen.innerText = buffer;
+        displayScreen();
     }
 }
 
@@ -23,7 +26,7 @@ function handlesymbol(symbol) {
             previousOperator = null;
             buffer = '0';
             runningTotal = 0;
-            screen.innerText = buffer;
+            displayScreen();
             miniscreen.innerText = "";
             break;
         case '=':
@@ -53,7 +56,7 @@ function handlesymbol(symbol) {
                     miniscreen.innerText = buffer + " =";
                 }
             }
-            screen.innerText = buffer;
+            displayScreen();
             last_thing = 3;
             break;
         case '←':
@@ -62,16 +65,16 @@ function handlesymbol(symbol) {
                 // last thing entered is a equal sign
                 if (last_thing === 3) {
                     if (miniscreen.innerText === "") {
-                        buffer = removelastdigit(buffer);
+                        buffer = removeLastDigit(buffer);
                     }
                     else {
                         miniscreen.innerText = "";
                     }
                 }
                 else {
-                    buffer = removelastdigit(buffer);
+                    buffer = removeLastDigit(buffer);
                 }
-                screen.innerText = buffer;
+                displayScreen();
             }
             break;
         case '+':
@@ -122,12 +125,12 @@ function handleNumber(numberString) {
     }
     if (buffer === "0") {
         buffer = numberString;
-    } else {
+    } else if (buffer.length < 27) {
         buffer += numberString
     }
 }
 
-function removelastdigit(buffer) {
+function removeLastDigit(buffer) {
     if (buffer.length === 1) {
         buffer = "0";
     } else {
@@ -135,6 +138,28 @@ function removelastdigit(buffer) {
     }
     return buffer;
 }
+
+function displayScreen() {
+    if (buffer.length >= 23) {
+        screen.style.fontSize = "20px";
+    }
+    else if (buffer.length >= 19) {
+        screen.style.fontSize = "25px";
+    }
+    else if (buffer.length >= 16) {
+        screen.style.fontSize = "30px";
+    }
+    else {
+        screen.style.fontSize = "35px";
+    }
+    if (buffer === "Infinity" || buffer === "-Infinity") {
+        screen.innerText = "Overflow";
+    }
+    else {
+        screen.innerText = buffer;
+    }
+}
+
 function init() {
     document.querySelector('.calc-buttons').addEventListener('click', function (event) {
         buttonClick(event.target.innerText);
