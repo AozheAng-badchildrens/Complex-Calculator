@@ -3,6 +3,7 @@ let buffer = "0";
 let previousOperator = null;
 let last_num = 0; // last number entered
 let last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
+let roundPlaces = 12;
 const screen = document.querySelector('.screen');
 const miniscreen = document.querySelector('.miniscreen');
 
@@ -32,12 +33,12 @@ function handlesymbol(symbol) {
         case '=':
             // only one number entered, no operation found
             if (last_thing === 0) {
-                miniscreen.innerText = buffer + " =";
+                miniscreen.innerText = roundBuffer() + " =";
             }
             // either a symbol (1) entered, or full binary operation (2)
             else if (last_thing === 1 || last_thing === 2) {
                 if (last_thing === 2) last_num = parseFloat(buffer);
-                miniscreen.innerText += " " + last_num + " ="
+                miniscreen.innerText += " " + roundLastNum() + " ="
                 flushOperation(last_num);
                 // previousOperator = null;
                 buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
@@ -46,14 +47,14 @@ function handlesymbol(symbol) {
             // last thing entered was =
             else {
                 if (previousOperator != null) {
-                    miniscreen.innerText = buffer + " " + previousOperator + " " + last_num.toString() + " =";
+                    miniscreen.innerText = roundBuffer() + " " + previousOperator + " " + roundLastNum() + " =";
                     runningTotal = parseFloat(buffer);
                     flushOperation(last_num);
                     buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
                     runningTotal = 0;
                 }
                 else {
-                    miniscreen.innerText = buffer + " =";
+                    miniscreen.innerText = roundBuffer() + " =";
                 }
             }
             displayScreen();
@@ -77,6 +78,9 @@ function handlesymbol(symbol) {
                 displayScreen();
             }
             break;
+        case '.':
+            handleDot();
+            break;
         case '+':
         case '−':
         case '×':
@@ -86,12 +90,19 @@ function handlesymbol(symbol) {
     }
 }
 
+function handleDot() {
+    if (!buffer.includes(".")) {
+        buffer += ".";
+    }
+    displayScreen();
+}
+
 function handleMath(symbol) {
     // if (buffer === '0') {
     //     return;
     // }
 
-    const intBuffer = parseFloat(buffer);
+    const intBuffer = parseFloat(roundBuffer());
     last_thing = 1;
     last_num = intBuffer;
     miniscreen.innerText = buffer + " " + symbol;
@@ -114,6 +125,7 @@ function flushOperation(intBuffer) {
     } else if (previousOperator === '÷') {
         runningTotal /= intBuffer;
     }
+    runningTotal = parseFloat(runningTotal.toFixed(roundPlaces));
 }
 
 function handleNumber(numberString) {
@@ -155,9 +167,20 @@ function displayScreen() {
     if (buffer === "Infinity" || buffer === "-Infinity") {
         screen.innerText = "Overflow";
     }
-    else {
+    else if (buffer.charAt(buffer.length - 1) === ".") {
         screen.innerText = buffer;
     }
+    else {
+        screen.innerText = roundBuffer();
+    }
+}
+
+function roundBuffer() {
+    return parseFloat(parseFloat(buffer).toFixed(roundPlaces)).toString();
+}
+
+function roundLastNum() {
+    return parseFloat(parseFloat(last_num).toFixed(roundPlaces)).toString();
 }
 
 function init() {
