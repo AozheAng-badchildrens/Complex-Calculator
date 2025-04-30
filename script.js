@@ -34,7 +34,7 @@ function handlesymbol(symbol) {
             if (last_thing === 0) {
                 miniscreen.innerText = roundString(buffer) + " =";
             }
-            else if (previousOperator === "÷" && buffer === "0") {
+            else if (previousOperator === "÷" && buffer === "0" && last_thing != 3) {
                 displayScreen("Cannot divide by zero");
                 reset();
                 break;
@@ -123,6 +123,11 @@ function handleDot() {
 
 function handleMath(symbol) {
     if (last_thing === 1 && symbol === previousOperator) {
+        return;
+    }
+    else if (last_thing === 1) {
+        previousOperator = symbol;
+        miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
         return;
     }
     const intBuffer = parseFloat(roundString(buffer));
