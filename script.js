@@ -15,30 +15,30 @@ function buttonClick(value) {
         handlesymbol(value);
     } else {
         handleNumber(value);
-        displayScreen();
+        displayScreen(buffer);
     }
 }
 
 function handlesymbol(symbol) {
     switch (symbol) {
         case 'C':
-            last_num = 0;
-            last_thing = 0;
-            previousOperator = null;
-            buffer = '0';
-            runningTotal = 0;
-            displayScreen();
-            miniscreen.innerText = "";
+            reset();
+            displayScreen("0");
             break;
         case '=':
             // only one number entered, no operation found
             if (last_thing === 0) {
-                miniscreen.innerText = roundBuffer() + " =";
+                miniscreen.innerText = roundString(buffer) + " =";
+            }
+            else if (previousOperator === "÷" && buffer === "0") {
+                displayScreen("Cannot divide by zero");
+                reset();
+                break;
             }
             // either a symbol (1) entered, or full binary operation (2)
             else if (last_thing === 1 || last_thing === 2) {
                 if (last_thing === 2) last_num = parseFloat(buffer);
-                miniscreen.innerText += " " + roundLastNum() + " =";
+                miniscreen.innerText += " " + roundString(last_num) + " =";
                 flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
                 // previousOperator = null;
                 buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
@@ -47,17 +47,17 @@ function handlesymbol(symbol) {
             // last thing entered was =
             else {
                 if (previousOperator != null) {
-                    miniscreen.innerText = roundBuffer() + " " + previousOperator + " " + roundLastNum() + " =";
+                    miniscreen.innerText = roundString(buffer) + " " + previousOperator + " " + roundString(last_num) + " =";
                     runningTotal = parseFloat(buffer);
                     flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
                     buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
                     runningTotal = 0;
                 }
                 else {
-                    miniscreen.innerText = roundBuffer() + " =";
+                    miniscreen.innerText = roundString(buffer) + " =";
                 }
             }
-            displayScreen();
+            displayScreen(buffer);
             last_thing = 3;
             break;
         case '←':
@@ -75,7 +75,7 @@ function handlesymbol(symbol) {
                 else {
                     buffer = removeLastDigit(buffer);
                 }
-                displayScreen();
+                displayScreen(buffer);
             }
             break;
         case '.':
@@ -94,7 +94,7 @@ function handleDot() {
     if (!buffer.includes(".")) {
         buffer += ".";
     }
-    displayScreen();
+    displayScreen(buffer);
 }
 
 function handleMath(symbol) {
@@ -102,16 +102,20 @@ function handleMath(symbol) {
     //     return;
     // }
 
-    const intBuffer = parseFloat(roundBuffer());
-    last_thing = 1;
+    const intBuffer = parseFloat(roundString(buffer));
     last_num = intBuffer;
-    miniscreen.innerText = roundBuffer() + " " + symbol;
+    displayScreen(intBuffer.toString());
     if (runningTotal === 0) {
         runningTotal = intBuffer;
     } else {
         flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
     }
+    if (last_thing === 2) {
+        displayScreen(runningTotal.toString());
+    }
+    miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
     previousOperator = symbol;
+    last_thing = 1;
     buffer = "0";
 }
 
@@ -152,11 +156,11 @@ function removeLastDigit(buffer) {
     return buffer;
 }
 
-function displayScreen() {
+function displayScreen(buffer) {
     if (buffer.length >= 23) {
-        screen.style.fontSize = "20px";
+        screen.style.fontSize = "29px";
     }
-    else if (buffer.length >= 19) {
+    else if (buffer.length >= 18) {
         screen.style.fontSize = "25px";
     }
     else if (buffer.length >= 16) {
@@ -171,17 +175,26 @@ function displayScreen() {
     else if (buffer.charAt(buffer.length - 1) === "." || buffer.charAt(buffer.length - 1) === "0") {
         screen.innerText = buffer;
     }
+    else if (buffer === "Cannot divide by zero") {
+        screen.innerText = "Cannot divide by zero";
+    }
     else {
-        screen.innerText = roundBuffer();
+        screen.innerText = roundString(buffer);
     }
 }
 
-function roundBuffer() {
-    return parseFloat(parseFloat(buffer).toFixed(roundPlaces)).toString();
+function reset() {
+    last_num = 0;
+    last_thing = 0;
+    previousOperator = null;
+    buffer = '0';
+    runningTotal = 0;
+    miniscreen.innerText = "";
 }
 
-function roundLastNum() {
-    return parseFloat(parseFloat(last_num).toFixed(roundPlaces)).toString();
+// given a string representing a float, return a new string that represents the number to a rounded place
+function roundString(numStr) {
+    return parseFloat(parseFloat(numStr).toFixed(roundPlaces)).toString();
 }
 
 function lenDecimal(numStr) {
