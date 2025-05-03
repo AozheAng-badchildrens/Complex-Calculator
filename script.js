@@ -30,23 +30,30 @@ function handlesymbol(symbol) {
             if (last_thing === 0) {
                 miniscreen.innerText = roundString(buffer) + " =";
             }
-            else if (previousOperator === "÷" && buffer === "0") {
-                displayScreen("Cannot divide by zero");
-                reset();
-                break;
-            }
             // either a symbol (1) entered, or full binary operation (2)
             else if (last_thing === 1 || last_thing === 2) {
                 if (last_thing === 2) last_num = parseFloat(buffer);
-                miniscreen.innerText += " " + roundString(last_num) + " =";
-                flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
-                // previousOperator = null;
-                buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
-                runningTotal = 0;
+                if (previousOperator === "÷" && last_num === 0) {
+                    displayScreen("Cannot divide by zero");
+                    reset();
+                    break;
+                }
+                else {
+                    miniscreen.innerText += " " + roundString(last_num) + " =";
+                    flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
+                    // previousOperator = null;
+                    buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
+                    runningTotal = 0;
+                }
             }
             // last thing entered was =
             else {
-                if (previousOperator != null) {
+                if (previousOperator === "÷" && last_num === 0) {
+                    displayScreen("Cannot divide by zero");
+                    reset();
+                    break;
+                }
+                else if (previousOperator != null) {
                     miniscreen.innerText = roundString(buffer) + " " + previousOperator + " " + roundString(last_num) + " =";
                     runningTotal = parseFloat(buffer);
                     flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
@@ -127,7 +134,7 @@ function flushOperation(intBuffer, lenD) {
     } else if (previousOperator === '×') {
         runningTotal *= intBuffer;
         runningTotal = parseFloat(runningTotal.toFixed(lenD));
-    } else if (previousOperator === '÷') {
+    } else if (previousOperator === '÷' && intBuffer != 0) {
         runningTotal /= intBuffer;
     }
     runningTotal = parseFloat(runningTotal.toFixed(roundPlaces));
