@@ -25,6 +25,10 @@ function handlesymbol(symbol) {
             reset();
             displayScreen("0");
             break;
+        case '±':
+            handlePM();
+            displayScreen(buffer);
+            break;
         case '=':
             // only one number entered, no operation found
             if (last_thing === 0) {
@@ -97,6 +101,26 @@ function handlesymbol(symbol) {
     }
 }
 
+function handlePM() {
+    if (buffer != "0") {
+        buffer = flipSign(buffer);
+    }
+    else if (last_thing === 1) {
+        buffer = flipSign(last_num.toString());
+        last_num = -last_num;
+    }
+}
+
+function flipSign(numStr) {
+    if (numStr.charAt(0) === '-') {
+        numStr = numStr.substring(1, numStr.length);
+    }
+    else {
+        numStr = "-" + numStr;
+    }
+    return numStr;
+}
+
 function handleDot() {
     if (!buffer.includes(".")) {
         buffer += ".";
@@ -105,15 +129,22 @@ function handleDot() {
 }
 
 function handleMath(symbol) {
-    // if (buffer === '0') {
-    //     return;
-    // }
-
+    if (last_thing === 1 && symbol === previousOperator) {
+        return;
+    }
+    else if (last_thing === 1) {
+        previousOperator = symbol;
+        miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
+        return;
+    }
     const intBuffer = parseFloat(roundString(buffer));
     last_num = intBuffer;
     displayScreen(intBuffer.toString());
     if (runningTotal === 0) {
         runningTotal = intBuffer;
+        if (previousOperator === '−') {
+            runningTotal *= -1;
+        }
     } else {
         flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
     }
