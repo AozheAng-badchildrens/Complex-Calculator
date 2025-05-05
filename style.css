@@ -14,7 +14,7 @@ html {
 body {
     /*centers child elements vertically (works only with display: flex)*/
     align-items: center;
-    background: linear-gradient(320deg, #eb92be, #ffef78, #63c9b4);
+    background: linear-gradient(320deg, #be7198, #3f8fb1, #3e7a6d);
     display: flex;
     font-family: 'Dosis', sans-serif;
     font-display: swap;
