@@ -1,2 +1,3 @@
 # Complex Calculator
-Supports Complex Numbers
+Currently under development, so far works as a standard calculator <br>
+Will support complex numbers.
