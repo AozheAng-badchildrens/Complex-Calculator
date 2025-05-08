@@ -1,6 +1,7 @@
 let runningTotal = 0;
 let buffer = "0"; // display
 let previousOperator = null;
+let previousBinOp = null;
 let last_num = 0; // last number entered
 let last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
 let roundPlaces = 12;
@@ -136,12 +137,14 @@ function flipSign(numStr) {
 
 function handleIm() {
     if (last_thing === 1) {
-        last_thing = 2;
         buffer = '0';
     }
     if (currentPart.charAt(buffer.length - 1) != "." && currentPart.includes('i') === false) {
         if (currentPart === "0" || currentPart === "1") {
             currentPart = '1i';
+            if (last_thing != 1 && previousOperator === "−") {
+                currentPart = "-1i";
+            }
             if (buffer.charAt(buffer.length - 1) === '0' || buffer.charAt(buffer.length - 1) === '1' || buffer.charAt(buffer.length - 1) === '.') {
                 buffer = removeLastDigit(buffer);
             }
@@ -192,10 +195,15 @@ function handleMath(symbol) {
                 // tmpIm = 3
                 let tmpIm = parseIm(currentPart);
                 // totalIm 2 -> 5
-                addToTotal(0, currIm);
-                currIm = tmpIm;
+                addToTotal(0, currIm + tmpIm);
+                currIm += tmpIm;
                 lastIm = tmpIm;
                 lastReal = null;
+                buffer = getComplexString(runningTotalR, runningTotalI);
+                buffer += " " + symbol + " ";
+                previousBinOp = symbol;
+                // displayScreen(buffer);
+                resetTotal();
                 // make sure to put equal sign stuff in a function rather in the body
                 // handlesymbol('=');
             }
@@ -212,10 +220,14 @@ function handleMath(symbol) {
             else {
                 // Ex. 2 + 3 + 
                 let tmpR = parseFloat(roundString(currentPart));
-                addToTotal(currReal, 0);
-                currReal = tmpR;
+                addToTotal(currReal + tmpR, 0);
+                currReal += tmpR;
                 lastReal = tmpR;
                 lastIm = null;
+                buffer = getComplexString(runningTotalR, runningTotalI);
+                buffer += " " + symbol + " ";
+                previousBinOp = symbol;
+                resetTotal();
                 // handlesymbol('=');
             }
         }
@@ -226,7 +238,7 @@ function handleMath(symbol) {
             lastReal = currReal;
             currIm = null;
             currReal = null;
-            // previousOperator = symbol;
+            previousBinOp = symbol;
             last_thing = 1;
         }
         // no real part
@@ -289,16 +301,24 @@ function updateCurr() {
 }
 
 function flushOperation(re, im) {
-    if (previousOperator === '+') {
+    if (previousBinOp === null) {
+        return;
+    }
+    if (previousBinOp === '+') {
         addToTotal(re, im);
-    } else if (previousOperator === '−') {
+    } else if (previousBinOp === '−') {
         addToTotal(-re, -im);
-    } else if (previousOperator === '×') {
+    } else if (previousBinOp === '×') {
         mulToTotal(runningTotalR, runningTotalI, re, im);
-    } else if (previousOperator === '÷' && intBuffer != 0) {
+    } else if (previousBinOp === '÷' && intBuffer != 0) {
         mulToTotal(runningTotalR, runningTotalI, re, -im);
         mulToTotal(runningTotalI, runningTotalR, re * re + im * im, 0);
     }
+}
+
+function resetTotal() {
+    runningTotalR = 0;
+    runningTotalI = 0;
 }
 
 function addToTotal(real, im) {
@@ -312,36 +332,48 @@ function mulToTotal(a, b, re, im) {
 }
 
 function handleEqual() {
+    // alert(currentPart);
     if (currentPart.includes("i")) {
         let im = parseIm(currentPart);
         if (currIm != null) {
             addToTotal(0, currIm);
+            previousBinOp = "+";
+            last_thing = 2;
         }
         currIm = im;
+        // alert(currIm);
     }
     else {
         let re = parseFloat(currentPart);
         if (currReal != null) {
             addToTotal(currReal, 0);
+            previousBinOp = "+";
+            last_thing = 2;
         }
         currReal = re;
     }
+
     updateCurr();
+    if (last_thing === 0) {
+        buffer = getComplexString(currReal, currIm);
+    }
     // Ex. 2 + 3i
-    if (currReal != null && currIm != null) {
+    else if (currReal != null && currIm != null) {
         flushOperation(currReal, currIm);
-        buffer = runningTotalR.toString() + " + " + runningTotalI.toString() + "i";
+        // alert(buffer);
+        buffer = getComplexString(runningTotalR, runningTotalI);
+        // alert(buffer);
+        // alert(typeof buffer);
+        resetTotal();
     }
     last_thing = 3;
+    // alert("1");
 }
 
 function handleNumber(numberString) {
-    // last thing was bin op
     if (last_thing === 1) {
-        last_thing = 2;
         buffer = "0";
     }
-    // last thing was =
     if (last_thing === 3) {
         miniscreen.innerText = "";
     }
@@ -359,6 +391,13 @@ function handleNumber(numberString) {
             buffer += numberString;
         }
     }
+    if (last_thing != 1 && previousOperator === "−" && currentPart.at(0) != "−") {
+        currentPart = "-" + currentPart;
+    }
+    if (last_thing === 1) {
+        last_thing = 2;
+    }
+
 }
 
 function removeLastDigit(buffer) {
@@ -401,6 +440,7 @@ function reset() {
     runningTotal = 0;
     buffer = "0"; // display
     previousOperator = null;
+    previousBinOp = null;
     last_num = 0; // last number entered
     last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
     lastReal = null;
@@ -434,6 +474,36 @@ function lenDecimal(numStr) {
         return 0;
     }
     return numStr.length - numStr.indexOf(".") - 1;
+}
+
+function getComplexString(re, im) {
+    if (re === 0) {
+        if (im === 0) {
+            return "0";
+        }
+        else if (im === 1) {
+            return "i";
+        }
+        else if (im === -1) {
+            return "− i";
+        }
+        return im.toString() + "i";
+    }
+    else if (im === 0) {
+        return re.toString();
+    }
+    else {
+        if (im === 1) {
+            return re.toString() + " + " + "i";
+        }
+        else if (im === -1) {
+            return re.toString() + " − " + "i";
+        }
+        else if (im < 0) {
+            return re.toString() + " − " + im.toString().substring(1) + "i";
+        }
+        return re.toString() + " + " + im.toString() + "i";
+    }
 }
 
 function init() {
