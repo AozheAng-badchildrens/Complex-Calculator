@@ -135,6 +135,10 @@ function flipSign(numStr) {
 }
 
 function handleIm() {
+    if (last_thing === 1) {
+        last_thing = 2;
+        buffer = '0';
+    }
     if (currentPart.charAt(buffer.length - 1) != "." && currentPart.includes('i') === false) {
         if (currentPart === "0" || currentPart === "1") {
             currentPart = '1i';
