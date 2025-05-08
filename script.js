@@ -1,9 +1,16 @@
 let runningTotal = 0;
-let buffer = "0";
+let buffer = "0"; // display
 let previousOperator = null;
 let last_num = 0; // last number entered
 let last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
 let roundPlaces = 12;
+let lastReal = null;
+let lastIm = null;
+let currReal = null;
+let currIm = null;
+let currentPart = "0";
+let runningTotalR = 0;
+let runningTotalI = 0;
 const screen = document.querySelector('.screen');
 const miniscreen = document.querySelector('.miniscreen');
 
@@ -25,51 +32,55 @@ function handlesymbol(symbol) {
             reset();
             displayScreen("0");
             break;
+        case 'i':
+            handleIm();
+            displayScreen(buffer);
+            break;
         case '±':
             handlePM();
             displayScreen(buffer);
             break;
         case '=':
-            // only one number entered, no operation found
-            if (last_thing === 0) {
-                miniscreen.innerText = roundString(buffer) + " =";
-            }
-            // either a symbol (1) entered, or full binary operation (2)
-            else if (last_thing === 1 || last_thing === 2) {
-                if (last_thing === 2) last_num = parseFloat(buffer);
-                if (previousOperator === "÷" && last_num === 0) {
-                    displayScreen("Cannot divide by zero");
-                    reset();
-                    break;
-                }
-                else {
-                    miniscreen.innerText += " " + roundString(last_num) + " =";
-                    flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
-                    // previousOperator = null;
-                    buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
-                    runningTotal = 0;
-                }
-            }
-            // last thing entered was =
-            else {
-                if (previousOperator === "÷" && last_num === 0) {
-                    displayScreen("Cannot divide by zero");
-                    reset();
-                    break;
-                }
-                else if (previousOperator != null) {
-                    miniscreen.innerText = roundString(buffer) + " " + previousOperator + " " + roundString(last_num) + " =";
-                    runningTotal = parseFloat(buffer);
-                    flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
-                    buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
-                    runningTotal = 0;
-                }
-                else {
-                    miniscreen.innerText = roundString(buffer) + " =";
-                }
-            }
+            // // only one number entered, no operation found
+            // if (last_thing === 0) {
+            //     miniscreen.innerText = roundString(buffer) + " =";
+            // }
+            // // either a symbol (1) entered, or full binary operation (2)
+            // else if (last_thing === 1 || last_thing === 2) {
+            //     if (last_thing === 2) last_num = parseFloat(buffer);
+            //     if (previousOperator === "÷" && last_num === 0) {
+            //         displayScreen("Cannot divide by zero");
+            //         reset();
+            //         break;
+            //     }
+            //     else {
+            //         miniscreen.innerText += " " + roundString(last_num) + " =";
+            //         flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
+            //         // previousOperator = null;
+            //         buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
+            //         runningTotal = 0;
+            //     }
+            // }
+            // // last thing entered was =
+            // else {
+            //     if (previousOperator === "÷" && last_num === 0) {
+            //         displayScreen("Cannot divide by zero");
+            //         reset();
+            //         break;
+            //     }
+            //     else if (previousOperator != null) {
+            //         miniscreen.innerText = roundString(buffer) + " " + previousOperator + " " + roundString(last_num) + " =";
+            //         runningTotal = parseFloat(buffer);
+            //         flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
+            //         buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
+            //         runningTotal = 0;
+            //     }
+            //     else {
+            //         miniscreen.innerText = roundString(buffer) + " =";
+            //     }
+            // }
+            handleEqual();
             displayScreen(buffer);
-            last_thing = 3;
             break;
         case '←':
             // last thing entered not a symbol
@@ -91,12 +102,14 @@ function handlesymbol(symbol) {
             break;
         case '.':
             handleDot();
+            displayScreen(buffer);
             break;
         case '+':
         case '−':
         case '×':
         case '÷':
             handleMath(symbol);
+            displayScreen(buffer);
             break;
     }
 }
@@ -121,73 +134,232 @@ function flipSign(numStr) {
     return numStr;
 }
 
-function handleDot() {
-    if (!buffer.includes(".")) {
-        buffer += ".";
+function handleIm() {
+    if (currentPart.charAt(buffer.length - 1) != "." && currentPart.includes('i') === false) {
+        if (currentPart === "0" || currentPart === "1") {
+            currentPart = '1i';
+            if (buffer.charAt(buffer.length - 1) === '0' || buffer.charAt(buffer.length - 1) === '1' || buffer.charAt(buffer.length - 1) === '.') {
+                buffer = removeLastDigit(buffer);
+            }
+            buffer += "i";
+        }
+        else {
+            currentPart += "i";
+            buffer += 'i';
+        }
     }
-    displayScreen(buffer);
+
+}
+
+function handleDot() {
+    if (!currentPart.includes(".") && currentPart.charAt(currentPart.length - 1) != 'i') {
+        buffer += ".";
+        currentPart += ".";
+    }
 }
 
 function handleMath(symbol) {
+    // last thing entered was same operation, nothing happens
     if (last_thing === 1 && symbol === previousOperator) {
         return;
     }
+    // last thing entered was a different operation, switch to that operation
     else if (last_thing === 1) {
         previousOperator = symbol;
         miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
         return;
     }
-    const intBuffer = parseFloat(roundString(buffer));
-    last_num = intBuffer;
-    displayScreen(intBuffer.toString());
-    if (runningTotal === 0) {
-        runningTotal = intBuffer;
-        if (previousOperator === '−') {
-            runningTotal *= -1;
+    // There are many cases to consider, review the code thoroughly for this part, not complete
+    else if (symbol === "+" || symbol === "−") {
+        // right now we have say "3i" as currentPart
+        // what can happen: 3i + , 2 + 3i +, 2i + 3i +
+
+        if (currentPart.includes("i")) {
+            // 3i + or 2 + 3i +
+            if (currIm === null) {
+                // retrieves 3 to be the currIm given we have not entered imaginary part
+                currIm = parseIm(currentPart);
+                if (currReal === null) {
+                    buffer += " " + symbol + " ";
+                }
+            }
+            else {
+                // Ex. 2i + 3i +
+                // tmpIm = 3
+                let tmpIm = parseIm(currentPart);
+                // totalIm 2 -> 5
+                addToTotal(0, currIm);
+                currIm = tmpIm;
+                lastIm = tmpIm;
+                lastReal = null;
+                // make sure to put equal sign stuff in a function rather in the body
+                // handlesymbol('=');
+            }
         }
-    } else {
-        flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
+        // just a real number, say 2
+        else {
+            // 3i + 2 + or 2 +
+            if (currReal === null) {
+                currReal = parseFloat(roundString(currentPart));
+                if (currIm === null) {
+                    buffer += " " + symbol + " ";
+                }
+            }
+            else {
+                // Ex. 2 + 3 + 
+                let tmpR = parseFloat(roundString(currentPart));
+                addToTotal(currReal, 0);
+                currReal = tmpR;
+                lastReal = tmpR;
+                lastIm = null;
+                // handlesymbol('=');
+            }
+        }
+        // ready to be added to total, a full imaginary number entered, say 2 + 3i + or 3i + 2 +
+        if (currIm != null && currReal != null) {
+            addToTotal(currReal, currIm);
+            lastIm = currIm;
+            lastReal = currReal;
+            currIm = null;
+            currReal = null;
+            // previousOperator = symbol;
+            last_thing = 1;
+        }
+        // no real part
+        else if (currReal === null && currIm != null) {
+            lastIm = currIm;
+        }
+        // no imaginary part
+        else if (currIm === null && currReal != null) {
+            lastReal = currReal;
+        }
+        else {
+            alert("Error: Both REAL and IM NULL");
+        }
+        // alert(currentPart);
+        currentPart = "0";
+        previousOperator = symbol;
     }
-    if (last_thing === 2) {
-        displayScreen(runningTotal.toString());
-    }
-    miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
-    previousOperator = symbol;
-    last_thing = 1;
-    buffer = "0";
+
+    // const intBuffer = parseFloat(roundString(buffer));
+    // last_num = intBuffer;
+    // displayScreen(intBuffer.toString());
+    // if (runningTotal === 0) {
+    //     runningTotal = intBuffer;
+    //     if (previousOperator === '−') {
+    //         runningTotal *= -1;
+    //     }
+    // } else {
+    //     flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
+    // }
+    // if (last_thing === 2) {
+    //     displayScreen(runningTotal.toString());
+    // }
+    // miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
+    // previousOperator = symbol;
+    // last_thing = 1;
+    // buffer = "0";
 }
 
-function flushOperation(intBuffer, lenD) {
-    if (previousOperator === '+') {
-        runningTotal += intBuffer;
-    } else if (previousOperator === '−') {
-        runningTotal -= intBuffer;
-    } else if (previousOperator === '×') {
-        runningTotal *= intBuffer;
-        runningTotal = parseFloat(runningTotal.toFixed(lenD));
-    } else if (previousOperator === '÷' && intBuffer != 0) {
-        runningTotal /= intBuffer;
+function getCurrIm() {
+    if (currentPart.includes("i")) {
+        return parseIm(currentPart);
     }
-    runningTotal = parseFloat(runningTotal.toFixed(roundPlaces));
+    return 0;
+}
+
+function getCurrRe() {
+    if (!currentPart.includes("i")) {
+        return parseFloat(currentPart);
+    }
+    return 0;
+}
+
+function updateCurr() {
+    if (currIm === null) {
+        currIm = getCurrIm();
+    }
+    if (currReal === null) {
+        currReal = getCurrRe();
+    }
+}
+
+function flushOperation(re, im) {
+    if (previousOperator === '+') {
+        addToTotal(re, im);
+    } else if (previousOperator === '−') {
+        addToTotal(-re, -im);
+    } else if (previousOperator === '×') {
+        mulToTotal(runningTotalR, runningTotalI, re, im);
+    } else if (previousOperator === '÷' && intBuffer != 0) {
+        mulToTotal(runningTotalR, runningTotalI, re, -im);
+        mulToTotal(runningTotalI, runningTotalR, re * re + im * im, 0);
+    }
+}
+
+function addToTotal(real, im) {
+    runningTotalI += im;
+    runningTotalR += real;
+}
+
+function mulToTotal(a, b, re, im) {
+    runningTotalR = a * re - b * im;
+    runningTotalI = a * im + b * re;
+}
+
+function handleEqual() {
+    if (currentPart.includes("i")) {
+        let im = parseIm(currentPart);
+        if (currIm != null) {
+            addToTotal(0, currIm);
+        }
+        currIm = im;
+    }
+    else {
+        let re = parseFloat(currentPart);
+        if (currReal != null) {
+            addToTotal(currReal, 0);
+        }
+        currReal = re;
+    }
+    updateCurr();
+    // Ex. 2 + 3i
+    if (currReal != null && currIm != null) {
+        flushOperation(currReal, currIm);
+        buffer = runningTotalR.toString() + " + " + runningTotalI.toString() + "i";
+    }
+    last_thing = 3;
 }
 
 function handleNumber(numberString) {
+    // last thing was bin op
     if (last_thing === 1) {
         last_thing = 2;
+        buffer = "0";
     }
+    // last thing was =
     if (last_thing === 3) {
         miniscreen.innerText = "";
     }
-    if (buffer === "0") {
-        buffer = numberString;
-    } else if (buffer.length < 27) {
-        buffer += numberString;
+    if (currentPart === "0") {
+        currentPart = numberString;
+        if (buffer === "0") {
+            buffer = currentPart;
+        }
+        else {
+            buffer += currentPart;
+        }
+    } else if (currentPart.length < 27) {
+        if (currentPart.charAt(currentPart.length - 1) != 'i') {
+            currentPart += numberString;
+            buffer += numberString;
+        }
     }
 }
 
 function removeLastDigit(buffer) {
     if (buffer.length === 1) {
-        buffer = "0";
+        buffer = "";
     } else {
         buffer = buffer.slice(0, -1);
     }
@@ -217,17 +389,34 @@ function displayScreen(buffer) {
         screen.innerText = "Cannot divide by zero";
     }
     else {
-        screen.innerText = roundString(buffer);
+        screen.innerText = buffer;
     }
 }
 
 function reset() {
-    last_num = 0;
-    last_thing = 0;
-    previousOperator = null;
-    buffer = '0';
     runningTotal = 0;
+    buffer = "0"; // display
+    previousOperator = null;
+    last_num = 0; // last number entered
+    last_thing = 0; // last thing entered (0: only one num, 1: bin_op, 2: 2nd operand, 3: equal)
+    lastReal = null;
+    lastIm = null;
+    currReal = null;
+    currIm = null;
+    currentPart = "0";
+    runningTotalR = 0;
+    runningTotalI = 0;
     miniscreen.innerText = "";
+}
+
+/**
+ * @param {string} im           Given a imaginary part only number, return it's real part rounded
+ * 
+ */
+
+function parseIm(im) {
+    im = im.substring(0, im.length - 1);
+    return parseFloat(roundString(im));
 }
 
 // given a string representing a float, return a new string that represents the number to a rounded place
