@@ -177,7 +177,7 @@ function handleMath(symbol) {
         return;
     }
     // There are many cases to consider, review the code thoroughly for this part, not complete
-    else if (symbol === "+" || symbol === "−") {
+    else if (symbol === "+" || symbol === "−" || symbol === "×" || symbol === "÷") {
         // right now we have say "3i" as currentPart
         // what can happen: 3i + , 2 + 3i +, 2i + 3i +
 
@@ -186,7 +186,7 @@ function handleMath(symbol) {
             if (currIm === null) {
                 // retrieves 3 to be the currIm given we have not entered imaginary part
                 currIm = parseIm(currentPart);
-                if (currReal === null) {
+                if (currReal === null && isPM(symbol)) {
                     buffer += " " + symbol + " ";
                 }
             }
@@ -200,7 +200,9 @@ function handleMath(symbol) {
                 lastIm = tmpIm;
                 lastReal = null;
                 buffer = getComplexString(runningTotalR, runningTotalI);
-                buffer += " " + symbol + " ";
+                if (isPM(symbol)) {
+                    buffer += " " + symbol + " ";
+                }
                 previousBinOp = symbol;
                 // displayScreen(buffer);
                 resetTotal();
@@ -213,7 +215,7 @@ function handleMath(symbol) {
             // 3i + 2 + or 2 +
             if (currReal === null) {
                 currReal = parseFloat(roundString(currentPart));
-                if (currIm === null) {
+                if (currIm === null && isPM(symbol)) {
                     buffer += " " + symbol + " ";
                 }
             }
@@ -225,7 +227,9 @@ function handleMath(symbol) {
                 lastReal = tmpR;
                 lastIm = null;
                 buffer = getComplexString(runningTotalR, runningTotalI);
-                buffer += " " + symbol + " ";
+                if (isPM(symbol)) {
+                    buffer += " " + symbol + " ";
+                }
                 previousBinOp = symbol;
                 resetTotal();
                 // handlesymbol('=');
@@ -243,11 +247,33 @@ function handleMath(symbol) {
         }
         // no real part
         else if (currReal === null && currIm != null) {
-            lastIm = currIm;
+            if (isPM(symbol)) {
+                lastIm = currIm;
+            }
+            else {
+                addToTotal(0, currIm);
+                lastIm = currIm;
+                lastReal = null;
+                currIm = null;
+                currReal = null;
+                previousBinOp = symbol;
+                last_thing = 1;
+            }
         }
         // no imaginary part
         else if (currIm === null && currReal != null) {
-            lastReal = currReal;
+            if (isPM(symbol)) {
+                lastReal = currReal;
+            }
+            else {
+                addToTotal(currReal, 0);
+                lastIm = null;
+                lastReal = currReal;
+                currIm = null;
+                currReal = null;
+                previousBinOp = symbol;
+                last_thing = 1;
+            }
         }
         else {
             alert("Error: Both REAL and IM NULL");
@@ -275,6 +301,10 @@ function handleMath(symbol) {
     // previousOperator = symbol;
     // last_thing = 1;
     // buffer = "0";
+}
+
+function isPM(symbol) {
+    return symbol === "+" || symbol === "−";
 }
 
 function getCurrIm() {
@@ -310,9 +340,9 @@ function flushOperation(re, im) {
         addToTotal(-re, -im);
     } else if (previousBinOp === '×') {
         mulToTotal(runningTotalR, runningTotalI, re, im);
-    } else if (previousBinOp === '÷' && intBuffer != 0) {
+    } else if (previousBinOp === '÷' && !(re == 0 && im == 0)) {
         mulToTotal(runningTotalR, runningTotalI, re, -im);
-        mulToTotal(runningTotalI, runningTotalR, re * re + im * im, 0);
+        mulToTotal(runningTotalR, runningTotalI, 1 / (re * re + im * im), 0);
     }
 }
 
@@ -335,6 +365,7 @@ function handleEqual() {
     // alert(currentPart);
     if (currentPart.includes("i")) {
         let im = parseIm(currentPart);
+        // Ex. 2i + 3i
         if (currIm != null) {
             addToTotal(0, currIm);
             previousBinOp = "+";
@@ -345,6 +376,7 @@ function handleEqual() {
     }
     else {
         let re = parseFloat(currentPart);
+        // Ex. 2 + 3
         if (currReal != null) {
             addToTotal(currReal, 0);
             previousBinOp = "+";
