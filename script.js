@@ -334,7 +334,7 @@ function updateCurr() {
 
 function flushOperation(re, im) {
     if (previousBinOp === null) {
-        return;
+        return false;
     }
     if (previousBinOp === '+') {
         addToTotal(re, im);
@@ -342,12 +342,18 @@ function flushOperation(re, im) {
         addToTotal(-re, -im);
     } else if (previousBinOp === '×') {
         mulToTotal(runningTotalR, runningTotalI, re, im);
-    } else if (previousBinOp === '÷' && !(re == 0 && im == 0)) {
+    } else if (previousBinOp === '÷') {
+        if (re == 0 && im == 0) {
+            reset();
+            buffer = "Cannot Divide by 0";
+            return false;
+        }
         mulToTotal(runningTotalR, runningTotalI, re, -im);
         mulToTotal(runningTotalR, runningTotalI, 1 / (re * re + im * im), 0);
     }
     runningTotalR = parseFloat(roundString(runningTotalR));
     runningTotalI = parseFloat(roundString(runningTotalI));
+    return true;
 }
 
 function resetTotal() {
@@ -375,6 +381,7 @@ function mul(a, b) {
 }
 
 function handleEqual() {
+    let success = true;
     if (currentPart.includes("i")) {
         let im = parseIm(currentPart);
         // Ex. 2i + 3i
@@ -402,11 +409,13 @@ function handleEqual() {
     }
     // Ex. 2 + 3i
     else if (currReal != null && currIm != null) {
-        flushOperation(currReal, currIm);
-        buffer = getComplexString(runningTotalR, runningTotalI);
-        resetTotal();
+        success = flushOperation(currReal, currIm);
+        if (success) {
+            buffer = getComplexString(runningTotalR, runningTotalI);
+            resetTotal();
+        }
     }
-    last_thing = 3;
+    if (success) last_thing = 3;
 }
 
 function handleNumber(numberString) {
@@ -418,7 +427,7 @@ function handleNumber(numberString) {
     }
     if (currentPart === "0") {
         currentPart = numberString;
-        if (buffer === "0") {
+        if (buffer === "0" || buffer === "Cannot Divide by 0") {
             buffer = currentPart;
         }
         else {
