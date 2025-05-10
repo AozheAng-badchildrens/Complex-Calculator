@@ -139,7 +139,7 @@ function handleIm() {
     if (last_thing === 1) {
         buffer = '0';
     }
-    if (currentPart.charAt(buffer.length - 1) != "." && currentPart.includes('i') === false) {
+    if (currentPart.at(-1) != "." && currentPart.includes('i') === false) {
         if (currentPart === "0" || currentPart === "1") {
             currentPart = '1i';
             if (last_thing != 1 && previousOperator === "−") {
@@ -155,7 +155,9 @@ function handleIm() {
             buffer += 'i';
         }
     }
-
+    if (last_thing === 1) {
+        last_thing = 2;
+    }
 }
 
 function handleDot() {
@@ -344,6 +346,8 @@ function flushOperation(re, im) {
         mulToTotal(runningTotalR, runningTotalI, re, -im);
         mulToTotal(runningTotalR, runningTotalI, 1 / (re * re + im * im), 0);
     }
+    runningTotalR = parseFloat(roundString(runningTotalR));
+    runningTotalI = parseFloat(roundString(runningTotalI));
 }
 
 function resetTotal() {
@@ -354,15 +358,23 @@ function resetTotal() {
 function addToTotal(real, im) {
     runningTotalI += im;
     runningTotalR += real;
+    runningTotalR = parseFloat(roundString(runningTotalR));
+    runningTotalI = parseFloat(roundString(runningTotalI));
 }
 
 function mulToTotal(a, b, re, im) {
-    runningTotalR = a * re - b * im;
-    runningTotalI = a * im + b * re;
+    runningTotalR = mul(a, re) - mul(b, im);
+    runningTotalI = mul(a, im) + mul(b, re);
+}
+
+function mul(a, b) {
+    let la = lenDecimal(a);
+    let lb = lenDecimal(b);
+    let res = a * b;
+    return parseFloat(res.toFixed(la + lb));
 }
 
 function handleEqual() {
-    // alert(currentPart);
     if (currentPart.includes("i")) {
         let im = parseIm(currentPart);
         // Ex. 2i + 3i
@@ -384,7 +396,6 @@ function handleEqual() {
         }
         currReal = re;
     }
-
     updateCurr();
     if (last_thing === 0) {
         buffer = getComplexString(currReal, currIm);
@@ -392,14 +403,10 @@ function handleEqual() {
     // Ex. 2 + 3i
     else if (currReal != null && currIm != null) {
         flushOperation(currReal, currIm);
-        // alert(buffer);
         buffer = getComplexString(runningTotalR, runningTotalI);
-        // alert(buffer);
-        // alert(typeof buffer);
         resetTotal();
     }
     last_thing = 3;
-    // alert("1");
 }
 
 function handleNumber(numberString) {
@@ -418,12 +425,12 @@ function handleNumber(numberString) {
             buffer += currentPart;
         }
     } else if (currentPart.length < 27) {
-        if (currentPart.charAt(currentPart.length - 1) != 'i') {
+        if (currentPart.at(-1) != 'i') {
             currentPart += numberString;
             buffer += numberString;
         }
     }
-    if (last_thing != 1 && previousOperator === "−" && currentPart.at(0) != "−") {
+    if (last_thing != 1 && previousOperator === "−" && currentPart.at(0) != "-") {
         currentPart = "-" + currentPart;
     }
     if (last_thing === 1) {
@@ -509,6 +516,8 @@ function lenDecimal(numStr) {
 }
 
 function getComplexString(re, im) {
+    // alert(re);
+    // alert(im);
     if (re === 0) {
         if (im === 0) {
             return "0";
