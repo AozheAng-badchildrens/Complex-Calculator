@@ -470,10 +470,25 @@ function handleEqual() {
         success = flushOperation(currReal, currIm);
         if (success) {
             buffer = getComplexString(runningTotalR, runningTotalI);
-            resetTotal();
         }
     }
-    if (success) last_thing = 3;
+    if (success) {
+        last_thing = 3;
+        if (runningTotalI === 0) {
+            currReal = null;
+            currentPart = roundString(runningTotalR);
+        }
+        else if (runningTotalR != 0) {
+            currReal = runningTotalR;
+            currentPart = roundString(runningTotalI) + "i";
+        }
+        else {
+            currReal = null;
+            currentPart = roundString(runningTotalI) + "i";
+        }
+        currIm = null;
+        resetTotal();
+    }
 }
 
 function handleNumber(numberString) {
