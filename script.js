@@ -207,6 +207,9 @@ function handleIm() {
                 buffer = removeLastDigit(buffer);
             }
             buffer += "i";
+            if (buffer.at(0) === '0') {
+                buffer = buffer.substring(1);
+            }
         }
         else {
             currentPart += "i";
@@ -464,6 +467,8 @@ function handleEqual() {
     updateCurr();
     if (last_thing === 0) {
         buffer = getComplexString(currReal, currIm);
+        addToTotal(currReal, currIm);
+        success = true;
     }
     // Ex. 2 + 3i
     else if (currReal != null && currIm != null) {
@@ -473,7 +478,9 @@ function handleEqual() {
         }
     }
     if (success) {
-        last_thing = 3;
+        if (last_thing != 0) {
+            last_thing = 3;
+        }
         if (runningTotalI === 0) {
             currReal = null;
             currentPart = roundString(runningTotalR);
@@ -504,7 +511,12 @@ function handleNumber(numberString) {
             buffer = currentPart;
         }
         else {
-            buffer += currentPart;
+            if (buffer.at(-1) != "0") {
+                buffer += currentPart;
+            }
+            else {
+                buffer = buffer.substring(0, buffer.length - 1) + currentPart;
+            }
         }
     } else if (currentPart.length < 27) {
         if (currentPart.at(-1) != 'i') {
