@@ -103,13 +103,46 @@ function handlesymbol(symbol) {
 }
 
 function handlePM() {
-    if (buffer != "0") {
+    if (buffer != "0" && last_thing != 1) {
         buffer = flipSign(buffer);
     }
-    else if (last_thing === 1) {
-        buffer = flipSign(last_num.toString());
-        last_num = -last_num;
+}
+
+function flipCurPart(state) {
+    if (currentPart != "0") {
+        if (state === 0) {
+            currentPart = "-" + currentPart;
+        }
+        else {
+            currentPart = currentPart.substring(1);
+        }
     }
+}
+
+function flipSign(numStr) {
+    if (numStr.includes('+')) {
+        let plus = numStr.indexOf('+');
+        numStr = numStr.substring(0, plus) + '−' + numStr.substring(plus + 1);
+        flipCurPart(0);
+        previousOperator = '−';
+    }
+    else if (numStr.includes('−')) {
+        let minus = numStr.indexOf('−');
+        numStr = numStr.substring(0, minus) + '+' + numStr.substring(minus + 1);
+        flipCurPart(1);
+        previousOperator = '+';
+    }
+    else {
+        if (numStr.at(0) === '-') {
+            numStr = numStr.substring(1);
+            flipCurPart(1);
+        }
+        else {
+            numStr = "-" + numStr;
+            flipCurPart(0);
+        }
+    }
+    return numStr;
 }
 
 function unflushPM() {
@@ -158,15 +191,7 @@ function handleBack() {
     }
 }
 
-function flipSign(numStr) {
-    if (numStr.charAt(0) === '-') {
-        numStr = numStr.substring(1, numStr.length);
-    }
-    else {
-        numStr = "-" + numStr;
-    }
-    return numStr;
-}
+
 
 function handleIm() {
     if (last_thing === 1) {
