@@ -85,21 +85,8 @@ function handlesymbol(symbol) {
             break;
         case '←':
             // last thing entered not a symbol
-            if (last_thing != 1) {
-                // last thing entered is a equal sign
-                if (last_thing === 3) {
-                    if (miniscreen.innerText === "") {
-                        buffer = removeLastDigit(buffer);
-                    }
-                    else {
-                        miniscreen.innerText = "";
-                    }
-                }
-                else {
-                    buffer = removeLastDigit(buffer);
-                }
-                displayScreen(buffer);
-            }
+            handleBack();
+            displayScreen(buffer);
             break;
         case '.':
             handleDot();
@@ -122,6 +109,52 @@ function handlePM() {
     else if (last_thing === 1) {
         buffer = flipSign(last_num.toString());
         last_num = -last_num;
+    }
+}
+
+function unflushPM() {
+    if (buffer.at(-1) === " ") {
+        if (buffer.includes("i")) {
+            currIm = null;
+        }
+        else {
+            currReal = null;
+        }
+        previousOperator = previousBinOp;
+        return true;
+    }
+    return false;
+}
+
+function handleBack() {
+    let flushPM = false;
+    if (last_thing != 1) {
+        // last thing entered is a equal sign
+        if (last_thing === 3) {
+            if (miniscreen.innerText === "") {
+                flushPM = unflushPM();
+                buffer = removeLastDigit(buffer);
+                if (!flushPM) {
+                    currentPart = removeLastDigit(currentPart);
+                }
+                else {
+                    currentPart = buffer;
+                }
+            }
+            else {
+                miniscreen.innerText = "";
+            }
+        }
+        else {
+            flushPM = unflushPM();
+            buffer = removeLastDigit(buffer);
+            if (!flushPM) {
+                currentPart = removeLastDigit(currentPart);
+            }
+            else {
+                currentPart = buffer;
+            }
+        }
     }
 }
 
@@ -450,8 +483,11 @@ function handleNumber(numberString) {
 
 function removeLastDigit(buffer) {
     if (buffer.length === 1) {
-        buffer = "";
+        buffer = "0";
     } else {
+        if (buffer.at(-1) === " ") {
+            buffer = buffer.slice(0, -2);
+        }
         buffer = buffer.slice(0, -1);
     }
     return buffer;
