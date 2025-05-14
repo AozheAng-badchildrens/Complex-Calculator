@@ -1,4 +1,3 @@
-let runningTotal = 0;
 let buffer = "0"; // display
 let previousOperator = null;
 let previousBinOp = null;
@@ -42,44 +41,6 @@ function handlesymbol(symbol) {
             displayScreen(buffer);
             break;
         case '=':
-            // // only one number entered, no operation found
-            // if (last_thing === 0) {
-            //     miniscreen.innerText = roundString(buffer) + " =";
-            // }
-            // // either a symbol (1) entered, or full binary operation (2)
-            // else if (last_thing === 1 || last_thing === 2) {
-            //     if (last_thing === 2) last_num = parseFloat(buffer);
-            //     if (previousOperator === "÷" && last_num === 0) {
-            //         displayScreen("Cannot divide by zero");
-            //         reset();
-            //         break;
-            //     }
-            //     else {
-            //         miniscreen.innerText += " " + roundString(last_num) + " =";
-            //         flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
-            //         // previousOperator = null;
-            //         buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
-            //         runningTotal = 0;
-            //     }
-            // }
-            // // last thing entered was =
-            // else {
-            //     if (previousOperator === "÷" && last_num === 0) {
-            //         displayScreen("Cannot divide by zero");
-            //         reset();
-            //         break;
-            //     }
-            //     else if (previousOperator != null) {
-            //         miniscreen.innerText = roundString(buffer) + " " + previousOperator + " " + roundString(last_num) + " =";
-            //         runningTotal = parseFloat(buffer);
-            //         flushOperation(last_num, lenDecimal(runningTotal) + lenDecimal(last_num));
-            //         buffer = (runningTotal === 0 ? "0" : buffer = runningTotal.toString());
-            //         runningTotal = 0;
-            //     }
-            //     else {
-            //         miniscreen.innerText = roundString(buffer) + " =";
-            //     }
-            // }
             handleEqual();
             displayScreen(buffer);
             break;
@@ -236,7 +197,7 @@ function handleMath(symbol) {
     // last thing entered was a different operation, switch to that operation
     else if (last_thing === 1) {
         previousOperator = symbol;
-        miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
+        previousBinOp = symbol;
         return;
     }
     // There are many cases to consider, review the code thoroughly for this part, not complete
@@ -345,25 +306,6 @@ function handleMath(symbol) {
         currentPart = "0";
         previousOperator = symbol;
     }
-
-    // const intBuffer = parseFloat(roundString(buffer));
-    // last_num = intBuffer;
-    // displayScreen(intBuffer.toString());
-    // if (runningTotal === 0) {
-    //     runningTotal = intBuffer;
-    //     if (previousOperator === '−') {
-    //         runningTotal *= -1;
-    //     }
-    // } else {
-    //     flushOperation(intBuffer, lenDecimal(runningTotal) + lenDecimal(last_num));
-    // }
-    // if (last_thing === 2) {
-    //     displayScreen(runningTotal.toString());
-    // }
-    // miniscreen.innerText = roundString(runningTotal.toString()) + " " + symbol;
-    // previousOperator = symbol;
-    // last_thing = 1;
-    // buffer = "0";
 }
 
 function isPM(symbol) {
@@ -573,7 +515,6 @@ function displayScreen(buffer) {
 }
 
 function reset() {
-    runningTotal = 0;
     buffer = "0"; // display
     previousOperator = null;
     previousBinOp = null;
