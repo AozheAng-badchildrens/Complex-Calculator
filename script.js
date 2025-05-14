@@ -211,8 +211,19 @@ function handleMath(symbol) {
             if (currIm === null) {
                 // retrieves 3 to be the currIm given we have not entered imaginary part
                 currIm = parseIm(currentPart);
-                if (currReal === null && isPM(symbol)) {
-                    buffer += " " + symbol + " ";
+                // 3i +
+                if (currReal === null) {
+                    if (isPM(symbol)) {
+                        buffer += " " + symbol + " ";
+                        miniDisplay = " (" + buffer + " ";
+                    }
+                    // Ex. 3i x
+                    else {
+                        miniDisplay = buffer + " " + symbol + " ";
+                    }
+                }
+                else {
+                    miniDisplay = " " + getComplexString(0, currIm) + ") " + symbol + " ";
                 }
             }
             else {
@@ -227,6 +238,10 @@ function handleMath(symbol) {
                 buffer = getComplexString(runningTotalR, runningTotalI);
                 if (isPM(symbol)) {
                     buffer += " " + symbol + " ";
+                    miniDisplay = "(" + buffer + " ";
+                }
+                else {
+                    miniDisplay = buffer + " " + symbol + " ";
                 }
                 previousBinOp = symbol;
                 resetTotal();
@@ -237,8 +252,17 @@ function handleMath(symbol) {
             // 3i + 2 + or 2 +
             if (currReal === null) {
                 currReal = parseFloat(roundString(currentPart));
-                if (currIm === null && isPM(symbol)) {
-                    buffer += " " + symbol + " ";
+                if (currIm === null) {
+                    if (isPM(symbol)) {
+                        buffer += " " + symbol + " ";
+                        miniDisplay = " (" + buffer + " ";
+                    }
+                    else {
+                        miniDisplay = buffer + " " + symbol + " ";
+                    }
+                }
+                else {
+                    miniDisplay = " " + currReal.toString() + ") " + symbol + " ";
                 }
             }
             else {
@@ -251,14 +275,16 @@ function handleMath(symbol) {
                 buffer = getComplexString(runningTotalR, runningTotalI);
                 if (isPM(symbol)) {
                     buffer += " " + symbol + " ";
+                    miniscreen.innerText = "(" + buffer + " ";
+                    miniDisplay = "";
+                }
+                else {
+                    miniscreen.innerText = buffer + " " + symbol + " ";
+                    miniDisplay = "";
                 }
                 previousBinOp = symbol;
                 resetTotal();
             }
-        }
-        miniDisplay = buffer;
-        if (buffer.at(-1) === " ") {
-            miniDisplay = '(' + miniDisplay;
         }
         // ready to be added to total, a full imaginary number entered, say 2 + 3i + or 3i + 2 +
         if (currIm != null && currReal != null) {
@@ -268,7 +294,6 @@ function handleMath(symbol) {
             currIm = null;
             currReal = null;
             previousBinOp = symbol;
-            miniDisplay = '(' + miniDisplay + ') ' + symbol;
             last_thing = 1;
         }
         // no real part
@@ -306,7 +331,7 @@ function handleMath(symbol) {
         }
         currentPart = "0";
         previousOperator = symbol;
-        miniscreen.innerText = miniDisplay;
+        miniscreen.innerText += miniDisplay;
     }
 }
 
@@ -416,12 +441,11 @@ function handleEqual() {
     }
     // Ex. 2 + 3i
     else if (currReal != null && currIm != null) {
-        miniDisplay = '(' + getComplexString(runningTotalR, runningTotalI) + ") " + previousBinOp + " (" + getComplexString(currReal, currIm);
-        miniDisplay += ") = ";
+        miniDisplay = bracketComplex(runningTotalR, runningTotalI) + " " + previousBinOp + " " + bracketComplex(currReal, currIm);
+        miniDisplay += " =";
         success = flushOperation(currReal, currIm);
         if (success) {
             buffer = getComplexString(runningTotalR, runningTotalI);
-            miniDisplay += buffer;
         }
     }
     if (success) {
@@ -559,9 +583,15 @@ function lenDecimal(numStr) {
     return numStr.length - numStr.indexOf(".") - 1;
 }
 
+function bracketComplex(re, im) {
+    let res = getComplexString(re, im);
+    if (re != 0 && im != 0) {
+        res = "(" + res + ")";
+    }
+    return res;
+}
+
 function getComplexString(re, im) {
-    // alert(re);
-    // alert(im);
     if (re === 0) {
         if (im === 0) {
             return "0";
