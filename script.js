@@ -198,13 +198,14 @@ function handleMath(symbol) {
     else if (last_thing === 1) {
         previousOperator = symbol;
         previousBinOp = symbol;
+        miniscreen.innerText = removeLastDigit(miniscreen.innerText) + " " + symbol + " ";
         return;
     }
     // There are many cases to consider, review the code thoroughly for this part, not complete
     else if (symbol === "+" || symbol === "−" || symbol === "×" || symbol === "÷") {
         // right now we have say "3i" as currentPart
         // what can happen: 3i + , 2 + 3i +, 2i + 3i +
-
+        let miniDisplay = "";
         if (currentPart.includes("i")) {
             // 3i + or 2 + 3i +
             if (currIm === null) {
@@ -228,10 +229,7 @@ function handleMath(symbol) {
                     buffer += " " + symbol + " ";
                 }
                 previousBinOp = symbol;
-                // displayScreen(buffer);
                 resetTotal();
-                // make sure to put equal sign stuff in a function rather in the body
-                // handlesymbol('=');
             }
         }
         // just a real number, say 2
@@ -256,8 +254,11 @@ function handleMath(symbol) {
                 }
                 previousBinOp = symbol;
                 resetTotal();
-                // handlesymbol('=');
             }
+        }
+        miniDisplay = buffer;
+        if (buffer.at(-1) === " ") {
+            miniDisplay = '(' + miniDisplay;
         }
         // ready to be added to total, a full imaginary number entered, say 2 + 3i + or 3i + 2 +
         if (currIm != null && currReal != null) {
@@ -267,6 +268,7 @@ function handleMath(symbol) {
             currIm = null;
             currReal = null;
             previousBinOp = symbol;
+            miniDisplay = '(' + miniDisplay + ') ' + symbol;
             last_thing = 1;
         }
         // no real part
@@ -302,9 +304,9 @@ function handleMath(symbol) {
         else {
             alert("Error: Both REAL and IM NULL");
         }
-        // alert(currentPart);
         currentPart = "0";
         previousOperator = symbol;
+        miniscreen.innerText = miniDisplay;
     }
 }
 
@@ -385,6 +387,7 @@ function mul(a, b) {
 
 function handleEqual() {
     let success = true;
+    let miniDisplay = "";
     if (currentPart.includes("i")) {
         let im = parseIm(currentPart);
         // Ex. 2i + 3i
@@ -394,7 +397,6 @@ function handleEqual() {
             last_thing = 2;
         }
         currIm = im;
-        // alert(currIm);
     }
     else {
         let re = parseFloat(currentPart);
@@ -414,9 +416,12 @@ function handleEqual() {
     }
     // Ex. 2 + 3i
     else if (currReal != null && currIm != null) {
+        miniDisplay = '(' + getComplexString(runningTotalR, runningTotalI) + ") " + previousBinOp + " (" + getComplexString(currReal, currIm);
+        miniDisplay += ") = ";
         success = flushOperation(currReal, currIm);
         if (success) {
             buffer = getComplexString(runningTotalR, runningTotalI);
+            miniDisplay += buffer;
         }
     }
     if (success) {
@@ -436,6 +441,7 @@ function handleEqual() {
             currentPart = roundString(runningTotalI) + "i";
         }
         currIm = null;
+        miniscreen.innerText = miniDisplay;
         resetTotal();
     }
 }
